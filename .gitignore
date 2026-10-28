@@ -1,0 +1,12 @@
+# build output
+build/
+*.o
+*.a
+
+# course example code
+reference/
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/
