@@ -17,10 +17,19 @@ uniform vec3 uAmbient;
 
 uniform vec3 uEye;
 
+//  debug: color by world-space normal instead of lighting
+uniform bool uNormalView;
+
 void main()
 {
    //  interpolated normals are no longer unit length
    vec3 N = normalize(vNormal);
+   if (uNormalView)
+   {
+      //  x, y, z in [-1, 1] -> red, green, blue in [0, 1]
+      fragColor = vec4(0.5 * N + 0.5, 1.0);
+      return;
+   }
    vec3 L = normalize(uLightDirection);
    vec3 V = normalize(uEye - vWorldPos);
    //  Blinn-Phong: specular from the half vector between light and eye

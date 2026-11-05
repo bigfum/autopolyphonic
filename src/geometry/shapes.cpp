@@ -1,6 +1,16 @@
 #include "geometry/shapes.h"
 #include <glm/gtc/constants.hpp>
 
+void MeshData::append(const MeshData &other, const glm::mat4 &m)
+{
+   const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(m)));
+   const unsigned base = static_cast<unsigned>(vertices.size());
+   for (const Vertex &v : other.vertices)
+      vertices.push_back({glm::vec3(m * glm::vec4(v.position, 1)), glm::normalize(normalMatrix * v.normal)});
+   for (unsigned i : other.indices)
+      indices.push_back(base + i);
+}
+
 MeshData makePlane(float size)
 {
    const float h = 0.5f * size;

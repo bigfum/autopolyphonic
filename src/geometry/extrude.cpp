@@ -110,25 +110,92 @@ MeshData extrude(const std::vector<glm::vec2> &profile, float depth, float creas
    return mesh;
 }
 
+MeshData extrudeAlong(const std::vector<glm::vec2> &profile, const std::vector<glm::vec3> &path,
+                      const glm::vec3 &up, float creaseAngle)
+{
+   MeshData mesh;
+   const size_t n = profile.size();
+   const size_t m = path.size();
+   const float cosCrease = std::cos(glm::radians(creaseAngle));
+
+   //  one frame per path point: forward bisects the incoming and outgoing directions so joints miter
+   struct Frame
+   {
+      glm::vec3 x, y, forward;
+      float miter; //  widens x at a bend so the rail keeps its width
+   };
+   std::vector<Frame> frames(m);
+   for (size_t k = 0; k < m; k++)
+   {
+      const glm::vec3 in = glm::normalize(path[k > 0 ? k : 1] - path[k > 0 ? k - 1 : 0]);
+      const glm::vec3 out = glm::normalize(path[k + 1 < m ? k + 1 : m - 1] - path[k + 1 < m ? k : m - 2]);
+      const glm::vec3 forward = glm::normalize(in + out);
+      //  if the path points along up, any other reference will do
+      const glm::vec3 reference = std::abs(glm::dot(forward, up)) > 0.999f ? glm::vec3(1, 0, 0) : up;
+      const glm::vec3 y = glm::normalize(reference - forward * glm::dot(reference, forward));
+      //  right-handed (x cross y = forward), so the winding survives
+      frames[k] = {glm::cross(y, forward), y, forward, 1 / glm::dot(forward, out)};
+   }
+   auto place = [&](size_t k, const glm::vec2 &p)
+   {
+      const Frame &f = frames[k];
+      return path[k] + f.x * (p.x * f.miter) + f.y * p.y;
+   };
+   auto orient = [&](size_t k, const glm::vec2 &nrm)
+   {
+      return glm::normalize(frames[k].x * nrm.x + frames[k].y * nrm.y);
+   };
+
+   std::vector<glm::vec2> normals(n);
+   for (size_t i = 0; i < n; i++)
+      normals[i] = edgeNormal(profile[i], profile[(i + 1) % n]);
+
+   //  side walls: for each outline edge, a strip of quads running the length of the path
+   for (size_t i = 0; i < n; i++)
+   {
+      const glm::vec2 &p0 = profile[i];
+      const glm::vec2 &p1 = profile[(i + 1) % n];
+      const glm::vec2 n0 = blendNormal(normals[i], normals[(i + n - 1) % n], cosCrease);
+      const glm::vec2 n1 = blendNormal(normals[i], normals[(i + 1) % n], cosCrease);
+
+      const unsigned base = static_cast<unsigned>(mesh.vertices.size());
+      for (size_t k = 0; k < m; k++)
+      {
+         mesh.vertices.push_back({place(k, p0), orient(k, n0)});
+         mesh.vertices.push_back({place(k, p1), orient(k, n1)});
+      }
+      for (size_t k = 0; k + 1 < m; k++)
+      {
+         const unsigned a = base + 2 * k; //  p0 at k
+         const unsigned b = a + 1;        //  p1 at k
+         const unsigned c = a + 3;        //  p1 at k + 1
+         const unsigned d = a + 2;        //  p0 at k + 1
+         mesh.indices.insert(mesh.indices.end(), {a, b, c, a, c, d});
+      }
+   }
+
+   const std::vector<unsigned> tris = triangulate(profile);
+   for (int cap = 0; cap < 2; cap++)
+   {
+      const bool end = cap == 0;
+      const size_t k = end ? m - 1 : 0;
+      const glm::vec3 normal = end ? frames[k].forward : -frames[k].forward;
+      const unsigned base = static_cast<unsigned>(mesh.vertices.size());
+      for (const glm::vec2 &p : profile)
+         mesh.vertices.push_back({place(k, p), normal});
+      for (size_t t = 0; t < tris.size(); t += 3)
+      {
+         if (end)
+            mesh.indices.insert(mesh.indices.end(), {base + tris[t], base + tris[t + 1], base + tris[t + 2]});
+         else
+            mesh.indices.insert(mesh.indices.end(), {base + tris[t], base + tris[t + 2], base + tris[t + 1]});
+      }
+   }
+   return mesh;
+}
+
 MeshData extrudeBetween(const std::vector<glm::vec2> &profile, const glm::vec3 &from, const glm::vec3 &to,
                         const glm::vec3 &up)
 {
-   const glm::vec3 axis = to - from;
-   const float length = glm::length(axis);
-   const glm::vec3 forward = axis / length;
-   //  if the segment points along up, any other reference will do
-   const glm::vec3 reference = std::abs(glm::dot(forward, up)) > 0.999f ? glm::vec3(1, 0, 0) : up;
-   const glm::vec3 y = glm::normalize(reference - forward * glm::dot(reference, forward));
-   const glm::vec3 x = glm::cross(y, forward);
-
-   //  right-handed basis (x cross y = forward), so the winding survives the transform
-   const glm::mat4 m(glm::vec4(x, 0), glm::vec4(y, 0), glm::vec4(forward, 0), glm::vec4(from, 1));
-   const glm::mat3 rotate(m);
-   MeshData mesh = extrude(profile, length);
-   for (Vertex &v : mesh.vertices)
-   {
-      v.position = glm::vec3(m * glm::vec4(v.position, 1));
-      v.normal = rotate * v.normal;
-   }
-   return mesh;
+   return extrudeAlong(profile, {from, to}, up);
 }

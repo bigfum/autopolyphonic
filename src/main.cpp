@@ -2,11 +2,9 @@
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
 #include "camera.h"
 #include "gl/mesh.h"
-#include "geometry/extrude.h"
-#include "geometry/lathe.h"
-#include "geometry/profile.h"
 #include "gl/shader.h"
 #include "gl/text.h"
+#include "instruments/marimba.h"
 #include "render/light.h"
 #include "render/material.h"
 #include <SDL2/SDL.h>
@@ -15,6 +13,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 static void fatal(const char *msg)
 {
@@ -52,41 +51,19 @@ int main(int, char **)
    {
       Shader phong("shaders/phong.vert", "shaders/phong.frag");
 
-      Mesh floor(makePlane(4.0f));
-      Mesh ball(makeSphere(0.6f, 24, 48));
+      Mesh floor(makePlane(6.0f));
 
-      //  temp lathe demo until the marimba replaces it.
-
-      //  tube
-      const float r = 0.08f, wall = 0.005f, length = 0.9f;
-      Mesh tube(lathe({{0, 0}, {r, 0}, {r, length}, {r - wall, length}, {r - wall, wall}, {0, wall}}, 32));
-
-      //  turned leg, smooth bits and creased bits
-      Mesh leg(lathe({{0, 0}, {0.03f, 0}, {0.032f, 0.015f}, {0.026f, 0.035f}, {0.019f, 0.07f}, {0.017f, 0.8f}, {0.024f, 0.825f}, {0.024f, 0.845f}, {0.02f, 0.86f}, {0.02f, 0.9f}, {0, 0.9f}},
-                     24));
-
-      //  temp extrusion demo: side view of a bar (length along x), counter-clockwise, with arched undercut
-      const float barLength = 0.8f, barThick = 0.03f, barWidth = 0.06f, node = 0.224f;
-      std::vector<glm::vec2> barOutline = {{-0.5f * barLength, -0.5f * barThick}};
-      const float archHalf = (0.5f - node) * barLength;
-      for (int k = 0; k <= 16; k++)
-      {
-         const float x = -archHalf + 2 * archHalf * k / 16;
-         const float lift = 0.5f * (1 + std::cos(3.14159265f * x / archHalf));
-         barOutline.push_back({x, -0.5f * barThick + 0.4f * barThick * lift});
-      }
-      barOutline.insert(barOutline.end(), {{0.5f * barLength, -0.5f * barThick},
-                                           {0.5f * barLength, 0.5f * barThick},
-                                           {-0.5f * barLength, 0.5f * barThick}});
-      Mesh bar(extrude(barOutline, barWidth));
-      //  two rails under the bar's nodes
-      const std::vector<glm::vec2> railOutline = roundedRect(0.022f, 0.04f, 0.005f);
-      const float railX = (0.5f - node) * barLength;
-      Mesh railA(extrudeBetween(railOutline, {-railX, 0.5f, -0.25f}, {-railX, 0.5f, 0.25f}));
-      Mesh railB(extrudeBetween(railOutline, {railX, 0.5f, -0.25f}, {railX, 0.5f, 0.25f}));
+      //  each bar gets its own mesh so it can move and glow (?) on its own later
+      const Marimba marimba = buildMarimba();
+      std::vector<Mesh> barMeshes;
+      for (const Marimba::Bar &bar : marimba.bars)
+         barMeshes.emplace_back(bar.mesh);
+      Mesh resonators(marimba.resonators);
+      Mesh frame(marimba.frame);
       Camera camera;
       Text text;
       bool wireframe = false;
+      bool normalView = false;
       const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
 
       auto draw = [&phong](const Mesh &mesh, const glm::mat4 &model, const Material &material)
@@ -144,6 +121,9 @@ int main(int, char **)
                case SDLK_w:
                   wireframe = !wireframe;
                   break;
+               case SDLK_n:
+                  normalView = !normalView;
+                  break;
                }
             }
             else if (event.type == SDL_MOUSEMOTION && (event.motion.state & SDL_BUTTON_LMASK))
@@ -170,18 +150,17 @@ int main(int, char **)
          phong.set("uView", camera.view());
          phong.set("uProjection", camera.projection(static_cast<float>(w) / h));
          phong.set("uEye", camera.eye());
+         phong.set("uNormalView", normalView ? 1 : 0);
          light.apply(phong);
 
          draw(floor, glm::mat4(1), materials::floor);
-         draw(ball, glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, -1.2f)), materials::plastic);
-         draw(bar, glm::translate(glm::mat4(1), glm::vec3(0, 0.543f, -0.5f * barWidth)), materials::rosewood);
-         draw(railA, glm::mat4(1), materials::darkWood);
-         draw(railB, glm::mat4(1), materials::darkWood);
-         draw(tube, glm::translate(glm::mat4(1), glm::vec3(1.1f, 0, 0.3f)), materials::brass);
-         draw(leg, glm::scale(glm::translate(glm::mat4(1), glm::vec3(-1.1f, 0, 0.3f)), glm::vec3(1.5f, 1, 1.5f)), materials::darkWood);
+         for (size_t i = 0; i < marimba.bars.size(); i++)
+            draw(barMeshes[i], glm::translate(glm::mat4(1), marimba.bars[i].center), materials::rosewood);
+         draw(resonators, glm::mat4(1), materials::brass);
+         draw(frame, glm::mat4(1), materials::darkWood);
 
-         text.print(5, 5, "Angle=%.0f,%.0f  Dim=%.1f  FOV=%.0f  Wireframe=%s", camera.th, camera.ph, camera.dim,
-                    camera.fov, wireframe ? "On" : "Off");
+         text.print(5, 5, "Angle=%.0f,%.0f  Dim=%.1f  FOV=%.0f  Wireframe=%s  Normals=%s", camera.th, camera.ph,
+                    camera.dim, camera.fov, wireframe ? "On" : "Off", normalView ? "On" : "Off");
 
          SDL_GL_SwapWindow(window);
       }

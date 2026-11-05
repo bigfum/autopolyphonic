@@ -1,5 +1,6 @@
 #include "gl/mesh.h"
 #include <cstddef>
+#include <utility>
 
 Mesh::Mesh(const MeshData &data)
     : count(static_cast<GLsizei>(data.indices.size()))
@@ -22,6 +23,32 @@ Mesh::Mesh(const MeshData &data)
 }
 
 Mesh::~Mesh()
+{
+   release();
+}
+
+Mesh::Mesh(Mesh &&other) noexcept
+    : vao(std::exchange(other.vao, 0)),
+      vbo(std::exchange(other.vbo, 0)),
+      ebo(std::exchange(other.ebo, 0)),
+      count(std::exchange(other.count, 0))
+{
+}
+
+Mesh &Mesh::operator=(Mesh &&other) noexcept
+{
+   if (this != &other)
+   {
+      release();
+      vao = std::exchange(other.vao, 0);
+      vbo = std::exchange(other.vbo, 0);
+      ebo = std::exchange(other.ebo, 0);
+      count = std::exchange(other.count, 0);
+   }
+   return *this;
+}
+
+void Mesh::release()
 {
    glDeleteBuffers(1, &ebo);
    glDeleteBuffers(1, &vbo);

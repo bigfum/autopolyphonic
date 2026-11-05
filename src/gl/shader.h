@@ -12,6 +12,7 @@ public:
    Shader &operator=(const Shader &) = delete;
 
    void use() const;
+   void set(const char *name, int value) const;
    void set(const char *name, float value) const;
    void set(const char *name, const glm::vec2 &value) const;
    void set(const char *name, const glm::vec3 &value) const;
