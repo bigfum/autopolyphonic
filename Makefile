@@ -4,7 +4,7 @@ EXE=autopolyphonic
 # Main target
 all: $(EXE)
 
-SRC=src/main.cpp src/camera.cpp src/gl/shader.cpp src/gl/mesh.cpp src/geometry/shapes.cpp src/geometry/lathe.cpp src/geometry/profile.cpp src/geometry/extrude.cpp
+SRC=src/main.cpp src/camera.cpp src/gl/shader.cpp src/gl/mesh.cpp src/gl/text.cpp src/gl/font.cpp src/geometry/shapes.cpp src/geometry/lathe.cpp src/geometry/profile.cpp src/geometry/extrude.cpp
 OBJ=$(SRC:.cpp=.o) third_party/glad/src/glad.o
 INC=-Isrc -Ithird_party/glad/include -Ithird_party/glm
 

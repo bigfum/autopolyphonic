@@ -6,6 +6,7 @@
 #include "geometry/lathe.h"
 #include "geometry/profile.h"
 #include "gl/shader.h"
+#include "gl/text.h"
 #include "render/light.h"
 #include "render/material.h"
 #include <SDL2/SDL.h>
@@ -84,6 +85,8 @@ int main(int, char **)
       Mesh railA(extrudeBetween(railOutline, {-railX, 0.5f, -0.25f}, {-railX, 0.5f, 0.25f}));
       Mesh railB(extrudeBetween(railOutline, {railX, 0.5f, -0.25f}, {railX, 0.5f, 0.25f}));
       Camera camera;
+      Text text;
+      bool wireframe = false;
       const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
 
       auto draw = [&phong](const Mesh &mesh, const glm::mat4 &model, const Material &material)
@@ -95,7 +98,6 @@ int main(int, char **)
       };
 
       glEnable(GL_CULL_FACE);
-      glEnable(GL_DEPTH_TEST);
 
       bool running = true;
       while (running)
@@ -139,6 +141,9 @@ int main(int, char **)
                case SDLK_MINUS:
                   camera.fov = std::max(camera.fov - 1, 1.0f);
                   break;
+               case SDLK_w:
+                  wireframe = !wireframe;
+                  break;
                }
             }
             else if (event.type == SDL_MOUSEMOTION && (event.motion.state & SDL_BUTTON_LMASK))
@@ -152,9 +157,14 @@ int main(int, char **)
          int w, h;
          SDL_GL_GetDrawableSize(window, &w, &h);
          glViewport(0, 0, w, h);
+         int windowWidth;
+         SDL_GetWindowSize(window, &windowWidth, nullptr);
+         text.resize(windowWidth, w, h);
 
          glClearColor(0.01f, 0.01f, 0.015f, 1.0f);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         glEnable(GL_DEPTH_TEST);
+         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
          phong.use();
          phong.set("uView", camera.view());
@@ -169,6 +179,9 @@ int main(int, char **)
          draw(railB, glm::mat4(1), materials::darkWood);
          draw(tube, glm::translate(glm::mat4(1), glm::vec3(1.1f, 0, 0.3f)), materials::brass);
          draw(leg, glm::scale(glm::translate(glm::mat4(1), glm::vec3(-1.1f, 0, 0.3f)), glm::vec3(1.5f, 1, 1.5f)), materials::darkWood);
+
+         text.print(5, 5, "Angle=%.0f,%.0f  Dim=%.1f  FOV=%.0f  Wireframe=%s", camera.th, camera.ph, camera.dim,
+                    camera.fov, wireframe ? "On" : "Off");
 
          SDL_GL_SwapWindow(window);
       }

@@ -75,6 +75,11 @@ void Shader::set(const char *name, float value) const
    glUniform1f(glGetUniformLocation(program, name), value);
 }
 
+void Shader::set(const char *name, const glm::vec2 &value) const
+{
+   glUniform2fv(glGetUniformLocation(program, name), 1, glm::value_ptr(value));
+}
+
 void Shader::set(const char *name, const glm::vec3 &value) const
 {
    glUniform3fv(glGetUniformLocation(program, name), 1, glm::value_ptr(value));
