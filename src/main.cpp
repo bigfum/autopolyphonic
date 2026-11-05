@@ -5,13 +5,13 @@
 #include <cstdio>
 #include <cstdlib>
 
-static void fatal(const char* msg)
+static void fatal(const char *msg)
 {
    std::fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
    std::exit(1);
 }
 
-int main(int, char**)
+int main(int, char **)
 {
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
       fatal("SDL_Init failed");
@@ -24,13 +24,15 @@ int main(int, char**)
    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-   SDL_Window* window = SDL_CreateWindow("autopolyphonic",
-      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720,
-      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-   if (!window) fatal("SDL_CreateWindow failed");
+   SDL_Window *window = SDL_CreateWindow("autopolyphonic",
+                                         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720,
+                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+   if (!window)
+      fatal("SDL_CreateWindow failed");
 
    SDL_GLContext context = SDL_GL_CreateContext(window);
-   if (!context) fatal("SDL_GL_CreateContext failed");
+   if (!context)
+      fatal("SDL_GL_CreateContext failed");
    SDL_GL_SetSwapInterval(1);
 
    //  Load GL function pointers through SDL
