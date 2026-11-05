@@ -11,6 +11,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
@@ -114,13 +115,13 @@ int main(int, char **)
                   camera.ph -= 5;
                   break;
                case SDLK_PAGEDOWN:
-                  camera.dim += 0.1f;
+                  camera.zoom(1.1f);
                   break;
                case SDLK_PAGEUP:
-                  camera.dim = std::max(camera.dim - 0.1f, 1.0f);
+                  camera.zoom(1 / 1.1f);
                   break;
                case SDLK_0:
-                  camera.th = camera.ph = 0;
+                  camera.reset();
                   break;
                case SDLK_EQUALS:
                   camera.fov = std::min(camera.fov + 1, 179.0f);
@@ -136,10 +137,29 @@ int main(int, char **)
                   break;
                }
             }
-            else if (event.type == SDL_MOUSEMOTION && (event.motion.state & SDL_BUTTON_LMASK))
+            else if (event.type == SDL_MOUSEMOTION &&
+                     (event.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK)))
             {
-               camera.th += 0.3f * event.motion.xrel;
-               camera.ph += 0.3f * event.motion.yrel;
+               const SDL_Keymod mod = SDL_GetModState();
+               if ((mod & KMOD_SHIFT) || (event.motion.state & SDL_BUTTON_RMASK))
+               {
+                  int windowHeight;
+                  SDL_GetWindowSize(window, nullptr, &windowHeight);
+                  camera.pan(event.motion.xrel, event.motion.yrel, windowHeight);
+               }
+               else if (mod & KMOD_CTRL)
+                  camera.zoom(std::pow(1.01f, event.motion.yrel));
+               else
+                  camera.orbit(event.motion.xrel, event.motion.yrel);
+            }
+            else if (event.type == SDL_MOUSEWHEEL)
+            {
+#if SDL_VERSION_ATLEAST(2, 0, 18)
+               const float amount = event.wheel.preciseY;
+#else
+               const float amount = event.wheel.y;
+#endif
+               camera.zoom(std::pow(0.9f, amount));
             }
          }
          camera.ph = std::clamp(camera.ph, -85.0f, 85.0f);
