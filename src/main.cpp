@@ -3,6 +3,8 @@
 #include "camera.h"
 #include "gl/mesh.h"
 #include "gl/shader.h"
+#include "render/light.h"
+#include "render/material.h"
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -44,11 +46,20 @@ int main(int, char **)
    std::printf("OpenGL %s\n", glGetString(GL_VERSION));
 
    {
-      Shader basic("shaders/basic.vert", "shaders/basic.frag");
+      Shader phong("shaders/phong.vert", "shaders/phong.frag");
 
       Mesh floor(makePlane(4.0f));
       Mesh ball(makeSphere(0.6f, 24, 48));
       Camera camera;
+      const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
+
+      auto draw = [&phong](const Mesh &mesh, const glm::mat4 &model, const Material &material)
+      {
+         phong.set("uModel", model);
+         phong.set("uNormalMatrix", glm::mat3(glm::transpose(glm::inverse(model))));
+         material.apply(phong);
+         mesh.draw();
+      };
 
       glEnable(GL_CULL_FACE);
       glEnable(GL_DEPTH_TEST);
@@ -109,19 +120,18 @@ int main(int, char **)
          SDL_GL_GetDrawableSize(window, &w, &h);
          glViewport(0, 0, w, h);
 
-         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+         glClearColor(0.01f, 0.01f, 0.015f, 1.0f);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-         basic.use();
-         basic.set("uView", camera.view());
-         basic.set("uProjection", camera.projection(static_cast<float>(w) / h));
+         phong.use();
+         phong.set("uView", camera.view());
+         phong.set("uProjection", camera.projection(static_cast<float>(w) / h));
+         phong.set("uEye", camera.eye());
+         light.apply(phong);
 
-         basic.set("uModel", glm::mat4(1));
-         floor.draw();
-         basic.set("uModel", glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, 0)));
-         ball.draw();
-         basic.set("uModel", glm::scale(glm::translate(glm::mat4(1), glm::vec3(1.2f, 0.25f, 0.7f)), glm::vec3(0.4f)));
-         ball.draw();
+         draw(floor, glm::mat4(1), materials::floor);
+         draw(ball, glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, 0)), materials::plastic);
+         draw(ball, glm::scale(glm::translate(glm::mat4(1), glm::vec3(1.2f, 0.25f, 0.7f)), glm::vec3(0.4f)), materials::plastic);
 
          SDL_GL_SwapWindow(window);
       }

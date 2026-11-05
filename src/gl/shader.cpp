@@ -70,6 +70,21 @@ void Shader::use() const
    glUseProgram(program);
 }
 
+void Shader::set(const char *name, float value) const
+{
+   glUniform1f(glGetUniformLocation(program, name), value);
+}
+
+void Shader::set(const char *name, const glm::vec3 &value) const
+{
+   glUniform3fv(glGetUniformLocation(program, name), 1, glm::value_ptr(value));
+}
+
+void Shader::set(const char *name, const glm::mat3 &value) const
+{
+   glUniformMatrix3fv(glGetUniformLocation(program, name), 1, GL_FALSE, glm::value_ptr(value));
+}
+
 void Shader::set(const char *name, const glm::mat4 &value) const
 {
    glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, glm::value_ptr(value));
