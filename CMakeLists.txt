@@ -12,6 +12,9 @@ find_package(OpenGL REQUIRED)
 add_library(glad STATIC third_party/glad/src/glad.c)
 target_include_directories(glad PUBLIC third_party/glad/include)
 
-add_executable(autopolyphonic src/main.cpp)
+add_executable(autopolyphonic src/main.cpp src/gl/shader.cpp)
+target_include_directories(autopolyphonic PRIVATE src)
+# Lets the program find shaders/ no matter where it is run from
+target_compile_definitions(autopolyphonic PRIVATE SHADER_DIR="${CMAKE_SOURCE_DIR}/shaders")
 target_link_libraries(autopolyphonic PRIVATE SDL2::SDL2 OpenGL::GL glad)
 target_compile_options(autopolyphonic PRIVATE -Wall -Wextra)

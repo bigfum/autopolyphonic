@@ -1,5 +1,6 @@
 //  Procedural MIDI instrument stage
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
+#include "gl/shader.h"
 #include <SDL.h>
 #include <glad/glad.h>
 #include <cstdio>
@@ -40,26 +41,73 @@ int main(int, char **)
       fatal("gladLoadGLLoader failed");
    std::printf("OpenGL %s\n", glGetString(GL_VERSION));
 
-   bool running = true;
-   while (running)
+   //  Scope so GL objects (the shader) are destroyed before the context
    {
-      SDL_Event event;
-      while (SDL_PollEvent(&event))
+      Shader basic(SHADER_DIR "/basic.vert", SHADER_DIR "/basic.frag");
+
+      const float vertices[] = {
+          -0.5f,
+          -0.5f,
+          0.0f,
+          1.0f,
+          0.2f,
+          0.2f,
+          0.5f,
+          -0.5f,
+          0.0f,
+          0.2f,
+          1.0f,
+          0.2f,
+          0.0f,
+          0.5f,
+          0.0f,
+          0.2f,
+          0.4f,
+          1.0f,
+      };
+
+      GLuint vao, vbo;
+      glGenVertexArrays(1, &vao);
+      glGenBuffers(1, &vbo);
+      glBindVertexArray(vao);
+      glBindBuffer(GL_ARRAY_BUFFER, vbo);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+      //  attribute 0: position, 3 floats at the start of each 6-float vertex
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+      glEnableVertexAttribArray(0);
+      //  attribute 1: color, 3 floats after the position
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+      glEnableVertexAttribArray(1);
+      glBindVertexArray(0);
+
+      bool running = true;
+      while (running)
       {
-         if (event.type == SDL_QUIT)
-            running = false;
-         else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-            running = false;
+         SDL_Event event;
+         while (SDL_PollEvent(&event))
+         {
+            if (event.type == SDL_QUIT)
+               running = false;
+            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
+               running = false;
+         }
+
+         int w, h;
+         SDL_GL_GetDrawableSize(window, &w, &h);
+         glViewport(0, 0, w, h);
+
+         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+         basic.use();
+         glBindVertexArray(vao);
+         glDrawArrays(GL_TRIANGLES, 0, 3);
+
+         SDL_GL_SwapWindow(window);
       }
 
-      //  Viewport in pixels (differs from window size on HiDPI)
-      int w, h;
-      SDL_GL_GetDrawableSize(window, &w, &h);
-      glViewport(0, 0, w, h);
-
-      glClearColor(0.08f, 0.08f, 0.10f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      SDL_GL_SwapWindow(window);
+      glDeleteBuffers(1, &vbo);
+      glDeleteVertexArrays(1, &vao);
    }
 
    SDL_GL_DeleteContext(context);
