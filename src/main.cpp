@@ -1,7 +1,8 @@
 //  Procedural MIDI instrument stage
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
+#include "gl/mesh.h"
 #include "gl/shader.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include <cstdio>
 #include <cstdlib>
@@ -41,44 +42,16 @@ int main(int, char **)
       fatal("gladLoadGLLoader failed");
    std::printf("OpenGL %s\n", glGetString(GL_VERSION));
 
-   //  Scope so GL objects (the shader) are destroyed before the context
+   //  Scope so GL objects (shader, meshes) are destroyed before the context
    {
-      Shader basic(SHADER_DIR "/basic.vert", SHADER_DIR "/basic.frag");
+      Shader basic("shaders/basic.vert", "shaders/basic.frag");
 
-      const float vertices[] = {
-          -0.5f,
-          -0.5f,
-          0.0f,
-          1.0f,
-          0.2f,
-          0.2f,
-          0.5f,
-          -0.5f,
-          0.0f,
-          0.2f,
-          1.0f,
-          0.2f,
-          0.0f,
-          0.5f,
-          0.0f,
-          0.2f,
-          0.4f,
-          1.0f,
-      };
+      //  Plane is edge-on until the camera exists, so only the sphere shows for now
+      Mesh floor(makePlane(4.0f));
+      Mesh ball(makeSphere(0.6f, 24, 48));
 
-      GLuint vao, vbo;
-      glGenVertexArrays(1, &vao);
-      glGenBuffers(1, &vbo);
-      glBindVertexArray(vao);
-      glBindBuffer(GL_ARRAY_BUFFER, vbo);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-      //  attribute 0: position, 3 floats at the start of each 6-float vertex
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-      glEnableVertexAttribArray(0);
-      //  attribute 1: color, 3 floats after the position
-      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-      glEnableVertexAttribArray(1);
-      glBindVertexArray(0);
+      //  Skip triangles facing away; relies on counter-clockwise winding
+      glEnable(GL_CULL_FACE);
 
       bool running = true;
       while (running)
@@ -100,14 +73,11 @@ int main(int, char **)
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
          basic.use();
-         glBindVertexArray(vao);
-         glDrawArrays(GL_TRIANGLES, 0, 3);
+         floor.draw();
+         ball.draw();
 
          SDL_GL_SwapWindow(window);
       }
-
-      glDeleteBuffers(1, &vbo);
-      glDeleteVertexArrays(1, &vao);
    }
 
    SDL_GL_DeleteContext(context);

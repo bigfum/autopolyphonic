@@ -10,3 +10,8 @@ reference/
 .DS_Store
 .vscode/
 .idea/
+
+# make output
+autopolyphonic
+*.exe
+*.d
