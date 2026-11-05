@@ -2,7 +2,9 @@
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
 #include "camera.h"
 #include "gl/mesh.h"
+#include "geometry/extrude.h"
 #include "geometry/lathe.h"
+#include "geometry/profile.h"
 #include "gl/shader.h"
 #include "render/light.h"
 #include "render/material.h"
@@ -61,6 +63,26 @@ int main(int, char **)
       //  turned leg, smooth bits and creased bits
       Mesh leg(lathe({{0, 0}, {0.03f, 0}, {0.032f, 0.015f}, {0.026f, 0.035f}, {0.019f, 0.07f}, {0.017f, 0.8f}, {0.024f, 0.825f}, {0.024f, 0.845f}, {0.02f, 0.86f}, {0.02f, 0.9f}, {0, 0.9f}},
                      24));
+
+      //  temp extrusion demo: side view of a bar (length along x), counter-clockwise, with arched undercut
+      const float barLength = 0.8f, barThick = 0.03f, barWidth = 0.06f, node = 0.224f;
+      std::vector<glm::vec2> barOutline = {{-0.5f * barLength, -0.5f * barThick}};
+      const float archHalf = (0.5f - node) * barLength;
+      for (int k = 0; k <= 16; k++)
+      {
+         const float x = -archHalf + 2 * archHalf * k / 16;
+         const float lift = 0.5f * (1 + std::cos(3.14159265f * x / archHalf));
+         barOutline.push_back({x, -0.5f * barThick + 0.4f * barThick * lift});
+      }
+      barOutline.insert(barOutline.end(), {{0.5f * barLength, -0.5f * barThick},
+                                           {0.5f * barLength, 0.5f * barThick},
+                                           {-0.5f * barLength, 0.5f * barThick}});
+      Mesh bar(extrude(barOutline, barWidth));
+      //  two rails under the bar's nodes
+      const std::vector<glm::vec2> railOutline = roundedRect(0.022f, 0.04f, 0.005f);
+      const float railX = (0.5f - node) * barLength;
+      Mesh railA(extrudeBetween(railOutline, {-railX, 0.5f, -0.25f}, {-railX, 0.5f, 0.25f}));
+      Mesh railB(extrudeBetween(railOutline, {railX, 0.5f, -0.25f}, {railX, 0.5f, 0.25f}));
       Camera camera;
       const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
 
@@ -141,7 +163,10 @@ int main(int, char **)
          light.apply(phong);
 
          draw(floor, glm::mat4(1), materials::floor);
-         draw(ball, glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, 0)), materials::plastic);
+         draw(ball, glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, -1.2f)), materials::plastic);
+         draw(bar, glm::translate(glm::mat4(1), glm::vec3(0, 0.543f, -0.5f * barWidth)), materials::rosewood);
+         draw(railA, glm::mat4(1), materials::darkWood);
+         draw(railB, glm::mat4(1), materials::darkWood);
          draw(tube, glm::translate(glm::mat4(1), glm::vec3(1.1f, 0, 0.3f)), materials::brass);
          draw(leg, glm::scale(glm::translate(glm::mat4(1), glm::vec3(-1.1f, 0, 0.3f)), glm::vec3(1.5f, 1, 1.5f)), materials::darkWood);
 
