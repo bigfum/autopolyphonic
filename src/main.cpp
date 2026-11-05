@@ -1,9 +1,12 @@
 //  Procedural MIDI instrument stage
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
+#include "camera.h"
 #include "gl/mesh.h"
 #include "gl/shader.h"
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 
@@ -18,7 +21,6 @@ int main(int, char **)
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
       fatal("SDL_Init failed");
 
-   //  Request a 3.3 core context (forward compatible is required on macOS)
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -37,21 +39,19 @@ int main(int, char **)
       fatal("SDL_GL_CreateContext failed");
    SDL_GL_SetSwapInterval(1);
 
-   //  Load GL function pointers through SDL
    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
       fatal("gladLoadGLLoader failed");
    std::printf("OpenGL %s\n", glGetString(GL_VERSION));
 
-   //  Scope so GL objects (shader, meshes) are destroyed before the context
    {
       Shader basic("shaders/basic.vert", "shaders/basic.frag");
 
-      //  Plane is edge-on until the camera exists, so only the sphere shows for now
       Mesh floor(makePlane(4.0f));
       Mesh ball(makeSphere(0.6f, 24, 48));
+      Camera camera;
 
-      //  Skip triangles facing away; relies on counter-clockwise winding
       glEnable(GL_CULL_FACE);
+      glEnable(GL_DEPTH_TEST);
 
       bool running = true;
       while (running)
@@ -61,9 +61,49 @@ int main(int, char **)
          {
             if (event.type == SDL_QUIT)
                running = false;
-            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-               running = false;
+            else if (event.type == SDL_KEYDOWN)
+            {
+               switch (event.key.keysym.sym)
+               {
+               case SDLK_ESCAPE:
+                  running = false;
+                  break;
+               case SDLK_RIGHT:
+                  camera.th += 5;
+                  break;
+               case SDLK_LEFT:
+                  camera.th -= 5;
+                  break;
+               case SDLK_UP:
+                  camera.ph += 5;
+                  break;
+               case SDLK_DOWN:
+                  camera.ph -= 5;
+                  break;
+               case SDLK_PAGEDOWN:
+                  camera.dim += 0.1f;
+                  break;
+               case SDLK_PAGEUP:
+                  camera.dim = std::max(camera.dim - 0.1f, 1.0f);
+                  break;
+               case SDLK_0:
+                  camera.th = camera.ph = 0;
+                  break;
+               case SDLK_EQUALS:
+                  camera.fov = std::min(camera.fov + 1, 179.0f);
+                  break;
+               case SDLK_MINUS:
+                  camera.fov = std::max(camera.fov - 1, 1.0f);
+                  break;
+               }
+            }
+            else if (event.type == SDL_MOUSEMOTION && (event.motion.state & SDL_BUTTON_LMASK))
+            {
+               camera.th += 0.3f * event.motion.xrel;
+               camera.ph += 0.3f * event.motion.yrel;
+            }
          }
+         camera.ph = std::clamp(camera.ph, -85.0f, 85.0f);
 
          int w, h;
          SDL_GL_GetDrawableSize(window, &w, &h);
@@ -73,7 +113,14 @@ int main(int, char **)
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
          basic.use();
+         basic.set("uView", camera.view());
+         basic.set("uProjection", camera.projection(static_cast<float>(w) / h));
+
+         basic.set("uModel", glm::mat4(1));
          floor.draw();
+         basic.set("uModel", glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, 0)));
+         ball.draw();
+         basic.set("uModel", glm::scale(glm::translate(glm::mat4(1), glm::vec3(1.2f, 0.25f, 0.7f)), glm::vec3(0.4f)));
          ball.draw();
 
          SDL_GL_SwapWindow(window);

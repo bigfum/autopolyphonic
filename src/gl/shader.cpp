@@ -1,4 +1,5 @@
 #include "gl/shader.h"
+#include <glm/gtc/type_ptr.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -67,4 +68,9 @@ Shader::~Shader()
 void Shader::use() const
 {
    glUseProgram(program);
+}
+
+void Shader::set(const char *name, const glm::mat4 &value) const
+{
+   glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, glm::value_ptr(value));
 }
