@@ -2,6 +2,7 @@
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
 #include "camera.h"
 #include "gl/mesh.h"
+#include "geometry/lathe.h"
 #include "gl/shader.h"
 #include "render/light.h"
 #include "render/material.h"
@@ -50,6 +51,16 @@ int main(int, char **)
 
       Mesh floor(makePlane(4.0f));
       Mesh ball(makeSphere(0.6f, 24, 48));
+
+      //  temp lathe demo until the marimba replaces it.
+
+      //  tube
+      const float r = 0.08f, wall = 0.005f, length = 0.9f;
+      Mesh tube(lathe({{0, 0}, {r, 0}, {r, length}, {r - wall, length}, {r - wall, wall}, {0, wall}}, 32));
+
+      //  turned leg, smooth bits and creased bits
+      Mesh leg(lathe({{0, 0}, {0.03f, 0}, {0.032f, 0.015f}, {0.026f, 0.035f}, {0.019f, 0.07f}, {0.017f, 0.8f}, {0.024f, 0.825f}, {0.024f, 0.845f}, {0.02f, 0.86f}, {0.02f, 0.9f}, {0, 0.9f}},
+                     24));
       Camera camera;
       const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
 
@@ -131,7 +142,8 @@ int main(int, char **)
 
          draw(floor, glm::mat4(1), materials::floor);
          draw(ball, glm::translate(glm::mat4(1), glm::vec3(0, 0.6f, 0)), materials::plastic);
-         draw(ball, glm::scale(glm::translate(glm::mat4(1), glm::vec3(1.2f, 0.25f, 0.7f)), glm::vec3(0.4f)), materials::plastic);
+         draw(tube, glm::translate(glm::mat4(1), glm::vec3(1.1f, 0, 0.3f)), materials::brass);
+         draw(leg, glm::scale(glm::translate(glm::mat4(1), glm::vec3(-1.1f, 0, 0.3f)), glm::vec3(1.5f, 1, 1.5f)), materials::darkWood);
 
          SDL_GL_SwapWindow(window);
       }
