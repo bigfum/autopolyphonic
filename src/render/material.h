@@ -30,4 +30,6 @@ namespace materials
    inline const Material chrome{{0.5f, 0.5f, 0.53f}, 1.0f, 128.0f};
    inline const Material bronze{{0.55f, 0.36f, 0.1f}, 0.9f, 64.0f};
    inline const Material rubber{{0.02f, 0.02f, 0.02f}, 0.1f, 8.0f};
+   inline const Material tin{{0.6f, 0.6f, 0.62f}, 0.8f, 64.0f};
+   inline const Material velvet{{0.25f, 0.01f, 0.015f}, 0.0f, 1.0f};
 }

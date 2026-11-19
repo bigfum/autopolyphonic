@@ -64,3 +64,30 @@ Model buildDeck(float width, float depth, float height)
    deck.add(std::move(mesh), materials::stage);
    return deck;
 }
+
+Model buildCurtain(float width, float height)
+{
+   const float amplitude = 0.08f;
+   const float foldWidth = 0.3f;
+   const float thickness = 0.02f;
+   const int steps = static_cast<int>(width / foldWidth) * 12;
+
+   std::vector<glm::vec2> outline;
+   for (int i = 0; i <= steps; i++)
+   {
+      const float x = width * i / steps - 0.5f * width;
+      outline.push_back({x, amplitude * std::sin(glm::two_pi<float>() * x / foldWidth) - 0.5f * thickness});
+   }
+   for (int i = steps; i >= 0; i--)
+   {
+      const float x = width * i / steps - 0.5f * width;
+      outline.push_back({x, amplitude * std::sin(glm::two_pi<float>() * x / foldWidth) + 0.5f * thickness});
+   }
+
+   const glm::mat4 m(glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, -1, 0), glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 0, 1));
+   MeshData mesh;
+   mesh.append(extrude(outline, height), m);
+   Model curtain;
+   curtain.add(std::move(mesh), materials::velvet);
+   return curtain;
+}

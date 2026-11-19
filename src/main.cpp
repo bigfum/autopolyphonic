@@ -5,6 +5,7 @@
 #include "gl/text.h"
 #include "instruments/drumkit.h"
 #include "instruments/marimba.h"
+#include "instruments/organ.h"
 #include "render/light.h"
 #include "render/shadow.h"
 #include "render/stage.h"
@@ -61,12 +62,13 @@ int main(int, char **)
       Shader phong("shaders/phong.vert", "shaders/phong.frag");
 
       const float deckHeight = 0.25f;
-      Model floor;
-      floor.add(makePlane(30.0f), materials::floor);
       Stage stage;
-      stage.add(floor);
       stage.add(buildDeck(7.0f, 4.5f, deckHeight));
+      stage.add(buildCurtain(8.4f, 4.0f), glm::translate(glm::mat4(1), glm::vec3(0, 0, -2.4f)));
+      for (float x : {-4.1f, 4.1f})
+         stage.add(buildCurtain(1.6f, 4.0f), glm::translate(glm::mat4(1), glm::vec3(x, 0, 1.5f)));
       stage.add(buildMarimba(), glm::translate(glm::mat4(1), glm::vec3(0, deckHeight, 1.0f)));
+      stage.add(buildPipeOrgan(), glm::translate(glm::mat4(1), glm::vec3(0, deckHeight, -1.8f)), 1);
       addDrumKit(stage, glm::rotate(glm::translate(glm::mat4(1), glm::vec3(-2.3f, deckHeight, -0.5f)),
                                     glm::pi<float>(), glm::vec3(0, 1, 0)));
       Camera camera;
@@ -191,7 +193,7 @@ int main(int, char **)
          SDL_GetWindowSize(window, &windowWidth, nullptr);
          text.resize(windowWidth, w, h);
 
-         glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
+         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
          glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 

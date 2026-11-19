@@ -28,3 +28,5 @@ private:
 };
 
 Model buildDeck(float width, float depth, float height);
+
+Model buildCurtain(float width, float height);
