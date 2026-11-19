@@ -80,6 +80,10 @@ int main(int, char **)
       glEnable(GL_CULL_FACE);
       glEnable(GL_MULTISAMPLE);
 
+      //  demo until MIDI (ride on every beat, marimba bars up the keyboard on eighth notes)
+      const float eighth = 0.25f;
+      int lastEighth = -1;
+
       bool running = true;
       while (running)
       {
@@ -160,9 +164,20 @@ int main(int, char **)
          }
          camera.ph = std::clamp(camera.ph, -85.0f, 85.0f);
 
+         const float now = SDL_GetTicks() / 1000.0f;
+         const int count = static_cast<int>(now / eighth);
+         if (count != lastEighth)
+         {
+            lastEighth = count;
+            const float hit = count * eighth;
+            if (count % 2 == 0)
+               stage.strike(9, 51, hit);
+            stage.strike(0, 45 + count % 52, hit);
+         }
+
          glEnable(GL_DEPTH_TEST);
          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-         stage.draw(shadow.begin(light.direction, glm::vec3(0, 1, 0), 4.5f));
+         stage.draw(shadow.begin(light.direction, glm::vec3(0, 1, 0), 4.5f), now);
          shadow.end();
 
          int w, h;
@@ -184,7 +199,7 @@ int main(int, char **)
          light.apply(phong);
          shadow.apply(phong, 1);
 
-         stage.draw(phong);
+         stage.draw(phong, now);
          if (showShadowMap)
             shadow.drawDebug(w, h);
 

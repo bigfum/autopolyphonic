@@ -21,7 +21,6 @@ namespace
 Model buildCymbal(float diameter, int note)
 {
    const float radius = 0.5f * diameter;
-   //  underside of the bell at the hole sits at y = 0, where it rests on a stand
    const float base = surface(holeRadius, radius);
    const int steps = 40;
    std::vector<glm::vec2> profile;
@@ -38,7 +37,7 @@ Model buildCymbal(float diameter, int note)
    profile.push_back(profile.front());
 
    Model cymbal;
-   cymbal.add(lathe(profile, 64), materials::bronze, glm::vec3(0), note);
+   cymbal.add(lathe(profile, 64), materials::bronze, glm::vec3(0), note, Motion::Swing);
    return cymbal;
 }
 

@@ -7,8 +7,9 @@
 class Stage
 {
 public:
-   void add(const Model &model, const glm::mat4 &placement = glm::mat4(1));
-   void draw(const Shader &shader) const;
+   void add(const Model &model, const glm::mat4 &placement = glm::mat4(1), int channel = 0);
+   void strike(int channel, int note, float time);
+   void draw(const Shader &shader, float time) const;
 
 private:
    struct Part
@@ -16,7 +17,11 @@ private:
       Mesh mesh;
       Material material;
       glm::mat4 model;
+      int channel;
       int note;
+      Motion motion;
+      float wobble;
+      float struck;
    };
 
    std::vector<Part> parts;
