@@ -6,6 +6,7 @@
 #include "instruments/drumkit.h"
 #include "instruments/marimba.h"
 #include "render/light.h"
+#include "render/shadow.h"
 #include "render/stage.h"
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
@@ -72,6 +73,8 @@ int main(int, char **)
       Text text;
       bool wireframe = false;
       bool normalView = false;
+      bool showShadowMap = false;
+      ShadowMap shadow;
       const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
 
       glEnable(GL_CULL_FACE);
@@ -125,6 +128,9 @@ int main(int, char **)
                case SDLK_n:
                   normalView = !normalView;
                   break;
+               case SDLK_m:
+                  showShadowMap = !showShadowMap;
+                  break;
                }
             }
             else if (event.type == SDL_MOUSEMOTION &&
@@ -154,6 +160,11 @@ int main(int, char **)
          }
          camera.ph = std::clamp(camera.ph, -85.0f, 85.0f);
 
+         glEnable(GL_DEPTH_TEST);
+         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+         stage.draw(shadow.begin(light.direction, glm::vec3(0, 1, 0), 4.5f));
+         shadow.end();
+
          int w, h;
          SDL_GL_GetDrawableSize(window, &w, &h);
          glViewport(0, 0, w, h);
@@ -161,9 +172,8 @@ int main(int, char **)
          SDL_GetWindowSize(window, &windowWidth, nullptr);
          text.resize(windowWidth, w, h);
 
-         glClearColor(0.01f, 0.01f, 0.015f, 1.0f);
+         glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         glEnable(GL_DEPTH_TEST);
          glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 
          phong.use();
@@ -172,8 +182,11 @@ int main(int, char **)
          phong.set("uEye", camera.eye());
          phong.set("uNormalView", normalView ? 1 : 0);
          light.apply(phong);
+         shadow.apply(phong, 1);
 
          stage.draw(phong);
+         if (showShadowMap)
+            shadow.drawDebug(w, h);
 
          text.print(5, 5, "Angle=%.0f,%.0f  Dim=%.1f  FOV=%.0f  Wireframe=%s  Normals=%s", camera.th, camera.ph,
                     camera.dim, camera.fov, wireframe ? "On" : "Off", normalView ? "On" : "Off");
