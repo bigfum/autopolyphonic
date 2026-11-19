@@ -3,6 +3,8 @@
 #include "camera.h"
 #include "gl/shader.h"
 #include "gl/text.h"
+#include "instruments/cymbal.h"
+#include "instruments/drum.h"
 #include "instruments/marimba.h"
 #include "render/light.h"
 #include "render/stage.h"
@@ -31,13 +33,11 @@ int main(int, char **)
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-   //  4x multisample anti-aliasing for smooth edges
    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
    const Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
    SDL_Window *window = SDL_CreateWindow("autopolyphonic", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, flags);
-   //  some machines have no multisampled visual; fall back to none rather than failing
    if (!window)
    {
       SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
@@ -66,6 +66,10 @@ int main(int, char **)
       stage.add(floor);
       stage.add(buildDeck(7.0f, 4.5f, deckHeight));
       stage.add(buildMarimba(), glm::translate(glm::mat4(1), glm::vec3(0, deckHeight, 1.0f)));
+      const DrumSpec tom{0.4f, 0.4f, 8};
+      stage.add(buildDrum(tom, materials::lacquer, 41),
+                glm::translate(glm::mat4(1), glm::vec3(-2.3f, deckHeight + tom.depth, 0.0f)));
+      stage.add(buildCymbal(0.45f, 49), glm::translate(glm::mat4(1), glm::vec3(-2.8f, deckHeight + 0.03f, -0.6f)));
       Camera camera;
       Text text;
       bool wireframe = false;
