@@ -68,8 +68,16 @@ int main(int, char **)
       stage.add(buildDeck(7.0f, 4.5f, deckHeight));
       stage.add(buildMarimba(), glm::translate(glm::mat4(1), glm::vec3(0, deckHeight, 1.0f)));
       const DrumSpec tom{0.4f, 0.4f, 8};
-      stage.add(buildDrum(tom, materials::lacquer, 41),
-                glm::translate(glm::mat4(1), glm::vec3(-2.3f, deckHeight + tom.depth, 0.0f)));
+      const float tomHeight = 0.6f;
+      const glm::mat4 tomHead = glm::translate(glm::mat4(1), glm::vec3(-2.3f, deckHeight + tomHeight, 0.0f));
+      stage.add(buildDrum(tom, materials::lacquer, 41), tomHead);
+      stage.add(buildFloorDrumLegs(tom.diameter, tomHeight), tomHead);
+      const DrumSpec snare{0.35f, 0.15f, 10};
+      const float snareHeight = 0.65f;
+      const glm::mat4 snareHead = glm::translate(glm::mat4(1), glm::vec3(-1.6f, deckHeight + snareHeight, -0.6f));
+      const float snareTilt = 10.0f;
+      stage.add(buildDrum(snare, materials::lacquer, 38), snareHead * drumStandTilt(snare, snareTilt));
+      stage.add(buildDrumStand(snare, snareHeight, snareTilt), snareHead);
       const StandSpec crashStand{1.2f, 3, 0.3f, 15.0f};
       const glm::mat4 crashBase = glm::translate(glm::mat4(1), glm::vec3(-2.8f, deckHeight, -0.6f));
       stage.add(buildCymbalStand(crashStand), crashBase);
