@@ -1,6 +1,7 @@
 #include "geometry/lathe.h"
 #include "geometry/profile.h"
 #include <glm/gtc/constants.hpp>
+#include <cmath>
 
 MeshData lathe(const std::vector<glm::vec2> &profile, int segments, float creaseAngle)
 {

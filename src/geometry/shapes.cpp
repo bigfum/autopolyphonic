@@ -1,5 +1,6 @@
 #include "geometry/shapes.h"
 #include <glm/gtc/constants.hpp>
+#include <cmath>
 
 void MeshData::append(const MeshData &other, const glm::mat4 &m)
 {

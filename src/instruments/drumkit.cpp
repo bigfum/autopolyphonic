@@ -3,6 +3,7 @@
 #include "instruments/drum.h"
 #include "instruments/stand.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <cmath>
 
 namespace
 {

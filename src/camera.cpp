@@ -1,6 +1,7 @@
 #include "camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
+#include <cmath>
 
 glm::vec3 Camera::eye() const
 {

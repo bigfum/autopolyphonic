@@ -4,6 +4,7 @@
 #include "geometry/profile.h"
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <cmath>
 
 namespace
 {

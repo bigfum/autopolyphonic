@@ -1,5 +1,6 @@
 #include "geometry/profile.h"
 #include <glm/gtc/constants.hpp>
+#include <cmath>
 
 std::vector<glm::vec2> roundedRect(float width, float height, float radius, int cornerSegments)
 {

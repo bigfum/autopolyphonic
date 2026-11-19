@@ -1,5 +1,6 @@
 #include "geometry/extrude.h"
 #include "geometry/profile.h"
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <numeric>
