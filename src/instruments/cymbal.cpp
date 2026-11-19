@@ -41,3 +41,9 @@ Model buildCymbal(float diameter, int note)
    cymbal.add(lathe(profile, 64), materials::bronze, glm::vec3(0), note);
    return cymbal;
 }
+
+float cymbalEdgeDrop(float diameter)
+{
+   const float radius = 0.5f * diameter;
+   return surface(holeRadius, radius) - surface(radius, radius);
+}
