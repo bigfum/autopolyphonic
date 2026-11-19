@@ -21,17 +21,19 @@ namespace
 Model buildCymbal(float diameter, int note)
 {
    const float radius = 0.5f * diameter;
+   //  underside of the bell at the hole sits at y = 0, where it rests on a stand
+   const float base = surface(holeRadius, radius);
    const int steps = 40;
    std::vector<glm::vec2> profile;
    for (int i = 0; i <= steps; i++)
    {
       const float r = glm::mix(holeRadius, radius, static_cast<float>(i) / steps);
-      profile.push_back({r, surface(r, radius) - thickness});
+      profile.push_back({r, surface(r, radius) - base});
    }
    for (int i = steps; i >= 0; i--)
    {
       const float r = glm::mix(holeRadius, radius, static_cast<float>(i) / steps);
-      profile.push_back({r, surface(r, radius)});
+      profile.push_back({r, surface(r, radius) - base + thickness});
    }
    profile.push_back(profile.front());
 

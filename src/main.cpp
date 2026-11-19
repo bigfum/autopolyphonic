@@ -6,6 +6,7 @@
 #include "instruments/cymbal.h"
 #include "instruments/drum.h"
 #include "instruments/marimba.h"
+#include "instruments/stand.h"
 #include "render/light.h"
 #include "render/stage.h"
 #include <SDL2/SDL.h>
@@ -69,7 +70,12 @@ int main(int, char **)
       const DrumSpec tom{0.4f, 0.4f, 8};
       stage.add(buildDrum(tom, materials::lacquer, 41),
                 glm::translate(glm::mat4(1), glm::vec3(-2.3f, deckHeight + tom.depth, 0.0f)));
-      stage.add(buildCymbal(0.45f, 49), glm::translate(glm::mat4(1), glm::vec3(-2.8f, deckHeight + 0.03f, -0.6f)));
+      const StandSpec crashStand{1.2f, 3, 0.3f, 15.0f};
+      const glm::mat4 crashBase = glm::translate(glm::mat4(1), glm::vec3(-2.8f, deckHeight, -0.6f));
+      stage.add(buildCymbalStand(crashStand), crashBase);
+      stage.add(buildCymbal(0.45f, 49),
+                glm::rotate(glm::translate(crashBase, glm::vec3(0, crashStand.height, 0)), glm::radians(crashStand.tilt),
+                            glm::vec3(1, 0, 0)));
       Camera camera;
       Text text;
       bool wireframe = false;
