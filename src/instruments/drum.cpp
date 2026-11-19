@@ -8,6 +8,7 @@
 namespace
 {
    constexpr int segments = 48;
+   constexpr float wiggle = 0.00005f;
    constexpr float headThickness = 0.002f;
    constexpr float shellWall = 0.01f;
 
@@ -69,7 +70,6 @@ Model buildDrum(const DrumSpec &spec, const Material &finish, int note)
 {
    const float r = 0.5f * spec.diameter;
    const float depth = spec.depth;
-   //  half a turn rather than a mirror, which would turn every triangle inside out
    const glm::mat4 flip = glm::rotate(glm::translate(glm::mat4(1), glm::vec3(0, -depth, 0)), glm::pi<float>(),
                                       glm::vec3(1, 0, 0));
 
@@ -89,9 +89,11 @@ Model buildDrum(const DrumSpec &spec, const Material &finish, int note)
    hardware.append(hardwareMesh(r, depth, spec.lugs), flip);
 
    Model drum;
-   drum.add(headMesh(r), materials::drumHead, glm::vec3(0), note);
-   drum.add(std::move(resonantHead), materials::drumHead);
-   drum.add(std::move(shell), finish);
-   drum.add(std::move(hardware), materials::chrome);
+   //  TODO: also flex the batter head instead (vertex shader bulge (?), full at the center, none at the hoop)
+   const glm::vec3 origin(0);
+   drum.add(headMesh(r), materials::drumHead, origin, note, Motion::Bounce, wiggle);
+   drum.add(std::move(resonantHead), materials::drumHead, origin, note, Motion::Bounce, wiggle);
+   drum.add(std::move(shell), finish, origin, note, Motion::Bounce, wiggle);
+   drum.add(std::move(hardware), materials::chrome, origin, note, Motion::Bounce, wiggle);
    return drum;
 }

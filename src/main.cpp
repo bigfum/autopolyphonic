@@ -172,6 +172,10 @@ int main(int, char **)
             const float hit = count * eighth;
             if (count % 2 == 0)
                stage.strike(9, 51, hit);
+            if (count % 4 == 0)
+               stage.strike(9, 36, hit);
+            if (count % 4 == 2)
+               stage.strike(9, 38, hit);
             stage.strike(0, 45 + count % 52, hit);
          }
 
