@@ -49,7 +49,8 @@ on launch, a built-in metronome plays the stage (stand in for MIDI). the ride sw
   - stands take any number of legs, and snare and cymbal stands tilt about a real pivot joint
   - every piece turns to face where the drummer's seat would be
 - **shadow mapping in core profile,** a depth pass from the light into a framebuffer object, then hardware depth compares with linear filtering for softened edges
-- **animation framework.** parts have a motion type (swing, bounce with wobble). `strike(channel, note, time)` sets one off, and each frame turns "time since the hit" into a damped-sine transform. channels work like MIDI channels (9 is drums) therefore MIDI playback should just work (once that's figured out)
+- **animation framework.** parts have a motion type (swing, bounce with wobble). `strike(channel, note, time)` sets one off, and each frame turns "time since the hit" into a damped-sine transform. channels work like MIDI channels (9 is drums) therefore MIDI playback should just work when implemented (AI-assisted)
+- **intuitive camera controls** mimics blender (3d modeling program) controls -- drag to orbit, shift/right-drag to pan (the grabbed point stays under the cursor at any zoom), scroll or ctrl-drag to zoom. zoom is exponential, so a mouse wheel and a trackpad's tiny fractional scrolls feel the same. (AI-assisted)
 
 ## plan
 

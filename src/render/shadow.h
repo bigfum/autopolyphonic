@@ -6,7 +6,7 @@
 class ShadowMap
 {
 public:
-   explicit ShadowMap(int size = 4096);
+   explicit ShadowMap(int size = 2048);
    ~ShadowMap();
    ShadowMap(const ShadowMap &) = delete;
    ShadowMap &operator=(const ShadowMap &) = delete;

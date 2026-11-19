@@ -2,6 +2,7 @@
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
 #include "camera.h"
 #include "gl/shader.h"
+#include "gl/font.h"
 #include "gl/text.h"
 #include "instruments/drumkit.h"
 #include "instruments/marimba.h"
@@ -17,6 +18,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 static void fatal(const char *msg)
 {
@@ -189,8 +191,8 @@ int main(int, char **)
          int w, h;
          SDL_GL_GetDrawableSize(window, &w, &h);
          glViewport(0, 0, w, h);
-         int windowWidth;
-         SDL_GetWindowSize(window, &windowWidth, nullptr);
+         int windowWidth, windowHeight;
+         SDL_GetWindowSize(window, &windowWidth, &windowHeight);
          text.resize(windowWidth, w, h);
 
          glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -211,6 +213,9 @@ int main(int, char **)
 
          text.print(5, 5, "Angle=%.0f,%.0f  Dim=%.1f  FOV=%.0f  Wireframe=%s  Normals=%s", camera.th, camera.ph,
                     camera.dim, camera.fov, wireframe ? "On" : "Off", normalView ? "On" : "Off");
+         const char *help = "mouse1-drag: orbit // shift+mouse1/mouse2-drag: pan // scroll: zoom";
+         const int helpWidth = static_cast<int>(std::strlen(help)) * fontAdvance;
+         text.print((windowWidth - helpWidth) / 2, windowHeight - fontHeight - 5, "%s", help);
 
          SDL_GL_SwapWindow(window);
       }

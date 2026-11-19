@@ -1,6 +1,4 @@
 //  8x14 bitmap font from the CSCIx229 library print-dl.c
-//  one glyph per character code, rows bottom to top
-//  most significant bit = leftmost pixel
 #include "gl/font.h"
 
 const unsigned char fontGlyphs[256][fontHeight] = {
