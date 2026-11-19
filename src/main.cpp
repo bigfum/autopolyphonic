@@ -1,12 +1,11 @@
 //  Procedural MIDI instrument stage
 //  Entry point: SDL2 window with an OpenGL 3.3 core context
 #include "camera.h"
-#include "gl/mesh.h"
 #include "gl/shader.h"
 #include "gl/text.h"
 #include "instruments/marimba.h"
 #include "render/light.h"
-#include "render/material.h"
+#include "render/stage.h"
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,7 +13,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
 
 static void fatal(const char *msg)
 {
@@ -61,28 +59,18 @@ int main(int, char **)
    {
       Shader phong("shaders/phong.vert", "shaders/phong.frag");
 
-      Mesh floor(makePlane(6.0f));
-
-      //  each bar gets its own mesh so it can move and glow (?) on its own later
-      const Marimba marimba = buildMarimba();
-      std::vector<Mesh> barMeshes;
-      for (const Marimba::Bar &bar : marimba.bars)
-         barMeshes.emplace_back(bar.mesh);
-      Mesh resonators(marimba.resonators);
-      Mesh frame(marimba.frame);
+      const float deckHeight = 0.25f;
+      Model floor;
+      floor.add(makePlane(30.0f), materials::floor);
+      Stage stage;
+      stage.add(floor);
+      stage.add(buildDeck(7.0f, 4.5f, deckHeight));
+      stage.add(buildMarimba(), glm::translate(glm::mat4(1), glm::vec3(0, deckHeight, 1.0f)));
       Camera camera;
       Text text;
       bool wireframe = false;
       bool normalView = false;
       const DirectionalLight light{{0.5f, 1.0f, 0.6f}, {1.0f, 1.0f, 0.9f}, {0.04f, 0.04f, 0.05f}};
-
-      auto draw = [&phong](const Mesh &mesh, const glm::mat4 &model, const Material &material)
-      {
-         phong.set("uModel", model);
-         phong.set("uNormalMatrix", glm::mat3(glm::transpose(glm::inverse(model))));
-         material.apply(phong);
-         mesh.draw();
-      };
 
       glEnable(GL_CULL_FACE);
       glEnable(GL_MULTISAMPLE);
@@ -183,11 +171,7 @@ int main(int, char **)
          phong.set("uNormalView", normalView ? 1 : 0);
          light.apply(phong);
 
-         draw(floor, glm::mat4(1), materials::floor);
-         for (size_t i = 0; i < marimba.bars.size(); i++)
-            draw(barMeshes[i], glm::translate(glm::mat4(1), marimba.bars[i].center), materials::rosewood);
-         draw(resonators, glm::mat4(1), materials::brass);
-         draw(frame, glm::mat4(1), materials::darkWood);
+         stage.draw(phong);
 
          text.print(5, 5, "Angle=%.0f,%.0f  Dim=%.1f  FOV=%.0f  Wireframe=%s  Normals=%s", camera.th, camera.ph,
                     camera.dim, camera.fov, wireframe ? "On" : "Off", normalView ? "On" : "Off");

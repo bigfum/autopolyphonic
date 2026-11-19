@@ -92,6 +92,14 @@ namespace
                    20);
    }
 
+   struct Bar
+   {
+      int note;
+      glm::vec3 center;
+      float thickness;
+      MeshData mesh;
+   };
+
    //  least-squares cubic v(x), so a rail follows the trend of the node points instead of every kink
    struct Cubic
    {
@@ -124,9 +132,10 @@ namespace
    };
 } // namespace
 
-Marimba buildMarimba(int lowNote, int highNote)
+Model buildMarimba(int lowNote, int highNote)
 {
-   Marimba marimba;
+   std::vector<Bar> bars;
+   MeshData resonators, frame;
    const float lowFreq = midiToHz(lowNote);
 
    //  naturals take consecutive slots; an accidental sits halfway past the natural below it
@@ -149,26 +158,26 @@ Marimba buildMarimba(int lowNote, int highNote)
       const float side = natural ? 1.0f : -1.0f;
       const float y = barTopHeight - 0.5f * thickness + (natural ? 0 : accidentalRaise);
       const float z = side * (0.5f * rowGap + 0.5f * length);
-      marimba.bars.push_back({note, {x, y, z}, thickness, barMesh(length, width, thickness, archDepth)});
+      bars.push_back({note, {x, y, z}, thickness, barMesh(length, width, thickness, archDepth)});
 
       //  resonator: a quarter wavelength of the bar's pitch, hung just under the bar
       const float barBottom = y - 0.5f * thickness;
       const float tubeLength = std::max(speedOfSound / (4 * freq), 0.05f);
       const float tubeRadius = glm::mix(0.03f, 0.015f, t);
-      marimba.resonators.append(resonatorMesh(tubeLength, tubeRadius),
+      resonators.append(resonatorMesh(tubeLength, tubeRadius),
                                 glm::translate(glm::mat4(1), glm::vec3(x, barBottom - 0.03f, z)));
    }
 
    //  center the keyboard on x
-   const float shift = -0.5f * (marimba.bars.front().center.x + marimba.bars.back().center.x);
-   for (Marimba::Bar &b : marimba.bars)
+   const float shift = -0.5f * (bars.front().center.x + bars.back().center.x);
+   for (Bar &b : bars)
       b.center.x += shift;
-   for (Vertex &v : marimba.resonators.vertices)
+   for (Vertex &v : resonators.vertices)
       v.position.x += shift;
 
    //  two rails per row under the nodal points, running past the end bars into the end beams
-   const float lowX = marimba.bars.front().center.x - endPad;
-   const float highX = marimba.bars.back().center.x + endPad;
+   const float lowX = bars.front().center.x - endPad;
+   const float highX = bars.back().center.x + endPad;
    float endZ[2][2] = {}; //  [row][low/high end] z of the outer rail
    float railY[2] = {};   //  [row] height of the rail centers at the ends
    for (int row = 0; row < 2; row++)
@@ -177,10 +186,10 @@ Marimba buildMarimba(int lowNote, int highNote)
       const float side = natural ? 1.0f : -1.0f;
       for (float fraction : {nodeFraction, 1 - nodeFraction})
       {
-         //  each bar's node point; E-F and B-C are a semitone apart instead of two, and the
+         //  !!!!! each bar's node point; E-F and B-C are a semitone apart instead of two, and the
          //  accidentals have gaps, so these zigzag slightly and can't be used as the path directly
          std::vector<float> xs, ys, zs;
-         for (const Marimba::Bar &b : marimba.bars)
+         for (const Bar &b : bars)
          {
             if (isNatural(b.note) != natural)
                continue;
@@ -199,7 +208,7 @@ Marimba buildMarimba(int lowNote, int highNote)
             const float x = glm::mix(lowX, highX, static_cast<float>(i) / samples);
             points.push_back({x, railHeight(x), railDepth(x)});
          }
-         marimba.frame.append(extrudeAlong(railProfile, points));
+         frame.append(extrudeAlong(railProfile, points));
          if (fraction > 0.5f)
          {
             endZ[row][0] = points.front().z;
@@ -218,13 +227,18 @@ Marimba buildMarimba(int lowNote, int highNote)
       const float front = endZ[0][end];
       const float back = endZ[1][end];
       //  legs stop under the rails; the beam slopes up to the raised accidental row
-      marimba.frame.append(legMesh(railY[0] - 0.02f), glm::translate(glm::mat4(1), glm::vec3(x, 0, front)));
-      marimba.frame.append(legMesh(railY[1] - 0.02f), glm::translate(glm::mat4(1), glm::vec3(x, 0, back)));
-      marimba.frame.append(extrudeBetween(beamProfile, {x, railY[0], front + 0.02f}, {x, railY[1], back - 0.02f}));
-      marimba.frame.append(extrudeBetween(rodProfile, {x, stretcherY, front}, {x, stretcherY, back}));
+      frame.append(legMesh(railY[0] - 0.02f), glm::translate(glm::mat4(1), glm::vec3(x, 0, front)));
+      frame.append(legMesh(railY[1] - 0.02f), glm::translate(glm::mat4(1), glm::vec3(x, 0, back)));
+      frame.append(extrudeBetween(beamProfile, {x, railY[0], front + 0.02f}, {x, railY[1], back - 0.02f}));
+      frame.append(extrudeBetween(rodProfile, {x, stretcherY, front}, {x, stretcherY, back}));
       stretcherEnds[end] = {x, stretcherY, 0.5f * (front + back)};
    }
-   marimba.frame.append(extrudeBetween(rodProfile, stretcherEnds[0], stretcherEnds[1]));
+   frame.append(extrudeBetween(rodProfile, stretcherEnds[0], stretcherEnds[1]));
 
+   Model marimba;
+   for (Bar &b : bars)
+      marimba.add(std::move(b.mesh), materials::rosewood, b.center, b.note);
+   marimba.add(std::move(resonators), materials::brass);
+   marimba.add(std::move(frame), materials::darkWood);
    return marimba;
 }

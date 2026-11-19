@@ -20,6 +20,7 @@ struct Material
 namespace materials
 {
    inline const Material floor{{0.005f, 0.005f, 0.005f}, 0.1f, 16.0f};
+   inline const Material stage{{0.03f, 0.03f, 0.035f}, 0.2f, 32.0f};
    inline const Material plastic{{1.0f, 0.0f, 0.0f}, 0.5f, 64.0f};
    inline const Material brass{{0.5f, 0.3f, 0.1f}, 0.9f, 96.0f};
    inline const Material darkWood{{0.06f, 0.03f, 0.02f}, 0.3f, 40.0f};

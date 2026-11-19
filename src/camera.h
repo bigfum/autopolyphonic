@@ -6,9 +6,9 @@ struct Camera
 {
    float th = 25;
    float ph = 20;
-   float dim = 1.7f;
+   float dim = 2.2f;
    float fov = 55;
-   glm::vec3 target{0, 0.75f, 0};
+   glm::vec3 target{0, 1.0f, 0.5f};
 
    glm::vec3 eye() const;
    glm::mat4 view() const;
